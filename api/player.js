@@ -12,11 +12,8 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'server and name are required' });
   }
 
-  const apiKey = process.env.LAST_ASYLUM_API_KEY;
-
-  if (!apiKey) {
-    return res.status(500).json({ error: 'API key not configured on server' });
-  }
+  // 임시로 키를 코드에 넣음 (나중에 환경변수로 바꾸는 것을 권장)
+  const apiKey = 'lap_a5aEyZQCHj66h7VWABjq3e3bOFN68RZIjTQxouFCVd8';
 
   try {
     const url = `https://api.lastasylumtracker.com/v1/players/${encodeURIComponent(server)}/${encodeURIComponent(name)}`;
