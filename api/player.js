@@ -1,5 +1,4 @@
 module.exports = async function handler(req, res) {
-  // 캐시 완전 차단
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
@@ -16,17 +15,15 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'server and name are required' });
   }
 
-  // API 키를 코드에 직접 넣음 (요청에 따라)
   const apiKey = 'lap_a5aEyZQCHj66h7VWABjq3e3bOFN68RZIjTQxouFCVd8';
 
   try {
-    // ?fresh=1 로 항상 게임에서 최신 좌표를 기다림 (캐시 무시)
     const url = `https://api.lastasylumtracker.com/v1/players/${encodeURIComponent(server)}/${encodeURIComponent(name)}?fresh=1&_=${Date.now()}`;
 
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Cache-Control': 'no-cache',
       },
       cache: 'no-store',
@@ -47,7 +44,8 @@ module.exports = async function handler(req, res) {
       uid: data.uid || data.player_id,
       cached: data.cached,
       age_seconds: data.age_seconds,
-      refreshing: data.refreshing,
+      map_updated_at: data.map_updated_at,
+      last_seen_at: data.last_seen_at,
     });
   } catch (err) {
     console.error(err);

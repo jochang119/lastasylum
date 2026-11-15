@@ -22,7 +22,7 @@
       border-radius: 16px;
       padding: 32px;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
     h1 {
@@ -55,9 +55,7 @@
       outline: none;
       transition: border-color 0.15s;
     }
-    input:focus {
-      border-color: #4f6ef7;
-    }
+    input:focus { border-color: #4f6ef7; }
     button {
       width: 100%;
       padding: 14px;
@@ -70,54 +68,37 @@
       cursor: pointer;
       transition: background 0.15s;
     }
-    button:hover:not(:disabled) {
-      background: #3b5bdb;
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    button:hover:not(:disabled) { background: #3b5bdb; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
     .result {
       margin-top: 28px;
       text-align: center;
-      min-height: 80px;
+      min-height: 100px;
     }
     .coords {
       font-size: 2.6rem;
       font-weight: 700;
       letter-spacing: 1px;
       color: #7dd3fc;
-      margin-bottom: 8px;
+      margin: 8px 0;
       user-select: all;
     }
-    .error {
-      color: #f87171;
-      font-size: 0.95rem;
-      line-height: 1.4;
-    }
-    .info {
-      color: #8b93a7;
-      font-size: 0.85rem;
-    }
-    .nick {
-      font-size: 0.95rem;
-      color: #a0a8b8;
-      margin-bottom: 6px;
-    }
-    .status {
-      margin-top: 10px;
-      font-size: 0.85rem;
+    .error { color: #f87171; font-size: 0.95rem; line-height: 1.4; }
+    .info { color: #8b93a7; font-size: 0.85rem; }
+    .nick { font-size: 1rem; color: #a0a8b8; }
+    .meta {
+      margin-top: 12px;
+      font-size: 0.8rem;
       color: #94a3b8;
+      line-height: 1.5;
     }
-    .fresh {
-      color: #4ade80;
-    }
+    .live { color: #4ade80; }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Last Asylum 좌표 조회</h1>
-    <p class="sub">서버 번호 + 닉네임 → 최신 좌표 (항상 실시간)</p>
+    <p class="sub">서버 + 닉네임 → 최신 관측 좌표</p>
 
     <label for="server">서버 번호</label>
     <input type="number" id="server" placeholder="예: 1" min="1" />
@@ -142,6 +123,18 @@
       });
     });
 
+    function formatTime(ts) {
+      if (!ts) return '알 수 없음';
+      const d = new Date(ts * 1000);
+      const now = Date.now();
+      const diff = Math.floor((now - d.getTime()) / 1000);
+      let ago = '';
+      if (diff < 60) ago = `${diff}초 전`;
+      else if (diff < 3600) ago = `${Math.floor(diff/60)}분 전`;
+      else ago = `${Math.floor(diff/3600)}시간 전`;
+      return `${d.toLocaleString('ko-KR')} (${ago})`;
+    }
+
     async function lookup() {
       const server = serverInput.value.trim();
       const nick = nickInput.value.trim();
@@ -152,11 +145,10 @@
       }
 
       btn.disabled = true;
-      btn.textContent = '실시간 조회 중...';
-      result.innerHTML = '<div class="info">게임에서 최신 좌표를 가져오는 중...<br>(1~2초 소요)</div>';
+      btn.textContent = '조회 중...';
+      result.innerHTML = '<div class="info">최신 데이터를 가져오는 중...</div>';
 
       try {
-        // 캐시 방지를 위해 타임스탬프 추가 + no-store
         const res = await fetch(
           `/api/player?server=${encodeURIComponent(server)}&name=${encodeURIComponent(nick)}&_=${Date.now()}`,
           { cache: 'no-store' }
@@ -164,23 +156,26 @@
         const data = await res.json();
 
         if (!res.ok) {
-          let msg = data.error || '알 수 없는 오류';
+          let msg = data.error || '오류가 발생했습니다';
           if (res.status === 404) msg = '플레이어를 찾을 수 없습니다.';
-          if (res.status === 409) msg = '같은 닉네임이 여러 명 있습니다. 서버를 확인해주세요.';
+          if (res.status === 409) msg = '같은 닉네임이 여러 명 있습니다.';
           if (res.status === 429) msg = '일일 요청 한도를 초과했습니다.';
-          if (res.status === 401) msg = 'API 키가 유효하지 않습니다.';
           result.innerHTML = `<div class="error">${msg}</div>`;
           return;
         }
 
-        const x = data.x;
-        const y = data.y;
         const name = data.nick || nick;
+        const x = data.x ?? '?';
+        const y = data.y ?? '?';
+        const mapTime = formatTime(data.map_updated_at);
 
         result.innerHTML = `
           <div class="nick">${name}</div>
           <div class="coords">${x}, ${y}</div>
-          <div class="status fresh">실시간 조회 완료</div>
+          <div class="meta">
+            <div class="live">라이브 조회 완료</div>
+            좌표 관측 시각: ${mapTime}
+          </div>
         `;
       } catch (err) {
         result.innerHTML = '<div class="error">네트워크 오류가 발생했습니다.</div>';
