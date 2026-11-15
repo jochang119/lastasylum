@@ -80,13 +80,14 @@
     .result {
       margin-top: 28px;
       text-align: center;
-      min-height: 60px;
+      min-height: 80px;
     }
     .coords {
       font-size: 2.4rem;
       font-weight: 700;
       letter-spacing: 1px;
       color: #7dd3fc;
+      margin-bottom: 8px;
     }
     .error {
       color: #f87171;
@@ -98,16 +99,27 @@
       font-size: 0.85rem;
     }
     .nick {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: #a0a8b8;
       margin-bottom: 6px;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+    .fresh {
+      color: #4ade80;
+    }
+    .cached {
+      color: #fbbf24;
     }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Last Asylum 좌표 조회</h1>
-    <p class="sub">서버 번호 + 닉네임으로 좌표만 확인</p>
+    <p class="sub">서버 번호 + 닉네임으로 최신 좌표 확인</p>
 
     <label for="server">서버 번호</label>
     <input type="number" id="server" placeholder="예: 1" min="1" />
@@ -126,7 +138,6 @@
     const btn = document.getElementById('btn');
     const result = document.getElementById('result');
 
-    // Enter 키로도 조회
     [serverInput, nickInput].forEach(el => {
       el.addEventListener('keydown', e => {
         if (e.key === 'Enter') lookup();
@@ -143,8 +154,8 @@
       }
 
       btn.disabled = true;
-      btn.textContent = '조회 중...';
-      result.innerHTML = '<div class="info">불러오는 중...</div>';
+      btn.textContent = '최신 좌표 조회 중...';
+      result.innerHTML = '<div class="info">실시간 좌표를 가져오는 중입니다...<br>(1~2초 소요될 수 있습니다)</div>';
 
       try {
         const res = await fetch(`/api/player?server=${encodeURIComponent(server)}&name=${encodeURIComponent(nick)}`);
@@ -163,10 +174,19 @@
         const x = data.x;
         const y = data.y;
         const name = data.nick || nick;
+        const isFresh = data.cached === false || data.age_seconds === 0;
+
+        let statusHtml = '';
+        if (isFresh) {
+          statusHtml = '<div class="status fresh">실시간 조회 완료</div>';
+        } else {
+          statusHtml = `<div class="status cached">캐시된 데이터 (age: ${data.age_seconds || '?'}초)</div>`;
+        }
 
         result.innerHTML = `
           <div class="nick">${name}</div>
           <div class="coords">${x}, ${y}</div>
+          ${statusHtml}
         `;
       } catch (err) {
         result.innerHTML = '<div class="error">네트워크 오류가 발생했습니다.</div>';

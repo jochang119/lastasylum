@@ -16,7 +16,8 @@ module.exports = async function handler(req, res) {
   const apiKey = 'lap_a5aEyZQCHj66h7VWABjq3e3bOFN68RZIjTQxouFCVd8';
 
   try {
-    const url = `https://api.lastasylumtracker.com/v1/players/${encodeURIComponent(server)}/${encodeURIComponent(name)}`;
+    // ?fresh=1 을 붙여서 캐시 무시하고 최신 좌표를 요청
+    const url = `https://api.lastasylumtracker.com/v1/players/${encodeURIComponent(server)}/${encodeURIComponent(name)}?fresh=1`;
 
     const response = await fetch(url, {
       headers: {
@@ -38,6 +39,11 @@ module.exports = async function handler(req, res) {
       x: data.x,
       y: data.y,
       uid: data.uid || data.player_id,
+      map_updated_at: data.map_updated_at,
+      cached: data.cached,
+      age_seconds: data.age_seconds,
+      cache_seconds: data.cache_seconds || 3600,
+      refreshing: data.refreshing,
     });
   } catch (err) {
     console.error(err);
